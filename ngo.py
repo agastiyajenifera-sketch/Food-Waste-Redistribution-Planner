@@ -3,12 +3,12 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image
-from config import IMAGES_DIR, FOOD_CATEGORIES
+from config import IMAGES_DIR, FOOD_CATEGORIES, FONT_FAMILY, THEME_COLORS
 from models import Donation, Request, NGO, User, Notification
 from utils import predict_expiry_risk, haversine_distance, extract_coords_from_text
 
 class NGODashboard(ctk.CTkFrame):
-    """NGO Dashboard layout with sidebar navigation and sub-panels."""
+    """NGO Dashboard layout with sidebar navigation, custom typography, and visual catalog."""
     def __init__(self, parent, user, on_logout, change_theme_callback):
         super().__init__(parent)
         self.user = user
@@ -35,39 +35,47 @@ class NGODashboard(ctk.CTkFrame):
         self.current_theme = ctk.get_appearance_mode().lower()
 
         # Sidebar Frame
-        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0)
+        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0, fg_color=("#f1f5f9", "#111827"))
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         self.sidebar.grid_columnconfigure(0, weight=1)
         self.sidebar.grid_rowconfigure(4, weight=1)  # Spacer
 
-        # Sidebar Title
-        sidebar_title = ctk.CTkLabel(self.sidebar, text="NGO Portal", font=ctk.CTkFont(size=18, weight="bold"))
+        # Sidebar Title (ALL CAPS bold unique font)
+        sidebar_title = ctk.CTkLabel(self.sidebar, text="NGO PORTAL", 
+                                     font=ctk.CTkFont(family=FONT_FAMILY, size=16, weight="bold"),
+                                     text_color=THEME_COLORS["primary"])
         sidebar_title.grid(row=0, column=0, padx=20, pady=25)
 
         # Nav Buttons
         self.btn_browse = ctk.CTkButton(self.sidebar, text="Browse Food", anchor="w", fg_color="transparent",
                                          text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                         font=ctk.CTkFont(family=FONT_FAMILY, size=13),
                                          command=lambda: self.switch_view("browse"))
         self.btn_browse.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
 
         self.btn_claims = ctk.CTkButton(self.sidebar, text="My Collection Claims", anchor="w", fg_color="transparent",
                                          text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                         font=ctk.CTkFont(family=FONT_FAMILY, size=13),
                                          command=lambda: self.switch_view("claims"))
         self.btn_claims.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
         self.btn_notifs = ctk.CTkButton(self.sidebar, text="Notifications", anchor="w", fg_color="transparent",
                                          text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                         font=ctk.CTkFont(family=FONT_FAMILY, size=13),
                                          command=lambda: self.switch_view("notifications"))
         self.btn_notifs.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
 
         # Dark/Light switch
-        self.theme_switch = ctk.CTkSwitch(self.sidebar, text="Dark Mode", command=self.toggle_theme)
+        self.theme_switch = ctk.CTkSwitch(self.sidebar, text="Dark Mode", command=self.toggle_theme,
+                                           progress_color=THEME_COLORS["primary"],
+                                           font=ctk.CTkFont(family=FONT_FAMILY, size=12))
         self.theme_switch.grid(row=5, column=0, padx=20, pady=10, sticky="w")
         if self.current_theme == "dark":
             self.theme_switch.select()
 
-        btn_logout = ctk.CTkButton(self.sidebar, text="Log Out", fg_color="#ef4444", hover_color="#dc2626",
-                                    text_color="white", command=self.on_logout)
+        btn_logout = ctk.CTkButton(self.sidebar, text="LOG OUT", fg_color=THEME_COLORS["primary"], hover_color=THEME_COLORS["primary"],
+                                    text_color="white", font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
+                                    command=self.on_logout)
         btn_logout.grid(row=6, column=0, padx=20, pady=20, sticky="ew")
 
         # Content Frame
@@ -94,7 +102,7 @@ class NGODashboard(ctk.CTkFrame):
         self.current_view = view_name
         self.clear_content()
 
-        # Update button highlight
+        # Update button highlight (Vibrant Purple Active Color)
         buttons = {
             "browse": self.btn_browse,
             "claims": self.btn_claims,
@@ -102,9 +110,9 @@ class NGODashboard(ctk.CTkFrame):
         }
         for name, btn in buttons.items():
             if name == view_name:
-                btn.configure(fg_color=("gray80", "gray25"), font=ctk.CTkFont(weight="bold"))
+                btn.configure(fg_color=THEME_COLORS["accent"], text_color="white", font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"))
             else:
-                btn.configure(fg_color="transparent", font=ctk.CTkFont(weight="normal"))
+                btn.configure(fg_color="transparent", text_color=("gray10", "gray90"), font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="normal"))
 
         if view_name == "browse":
             self.show_browse_view()
@@ -119,9 +127,9 @@ class NGODashboard(ctk.CTkFrame):
         self.content_area.grid_rowconfigure(1, weight=0)
         self.content_area.grid_rowconfigure(2, weight=1)
 
-        # Header Title
-        title_lbl = ctk.CTkLabel(self.content_area, text="Available Surplus Food Catalog", 
-                                 font=ctk.CTkFont(size=20, weight="bold"))
+        # Header Title (ALL CAPS bold unique font)
+        title_lbl = ctk.CTkLabel(self.content_area, text="AVAILABLE SURPLUS FOOD CATALOG", 
+                                 font=ctk.CTkFont(family=FONT_FAMILY, size=20, weight="bold"))
         title_lbl.grid(row=0, column=0, sticky="w", pady=(0, 10))
 
         # Search and Filters Panel
@@ -133,19 +141,25 @@ class NGODashboard(ctk.CTkFrame):
         # Search Entry
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", lambda *args: self.refresh_available_catalog())
-        self.search_entry = ctk.CTkEntry(filter_frame, placeholder_text="🔍 Search food by name...", textvariable=self.search_var, height=35)
+        self.search_entry = ctk.CTkEntry(filter_frame, placeholder_text="🔍 Search food by name...", 
+                                         font=ctk.CTkFont(family=FONT_FAMILY, size=13),
+                                         textvariable=self.search_var, height=35)
         self.search_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
         # Category Filter
         categories = ["All Categories"] + FOOD_CATEGORIES
         self.category_var = tk.StringVar(value="All Categories")
-        self.category_filter = ctk.CTkOptionMenu(filter_frame, values=categories, variable=self.category_var, height=35, command=lambda x: self.refresh_available_catalog())
+        self.category_filter = ctk.CTkOptionMenu(filter_frame, values=categories, variable=self.category_var, height=35, 
+                                                 font=ctk.CTkFont(family=FONT_FAMILY, size=12),
+                                                 command=lambda x: self.refresh_available_catalog())
         self.category_filter.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
         # Sort selector
         self.sort_var = tk.StringVar(value="Soonest Expiry First")
         sort_options = ["Soonest Expiry First", "Largest Quantity First", "Closest Distance First"]
-        self.sort_select = ctk.CTkOptionMenu(filter_frame, values=sort_options, variable=self.sort_var, height=35, command=lambda x: self.refresh_available_catalog())
+        self.sort_select = ctk.CTkOptionMenu(filter_frame, values=sort_options, variable=self.sort_var, height=35, 
+                                             font=ctk.CTkFont(family=FONT_FAMILY, size=12),
+                                             command=lambda x: self.refresh_available_catalog())
         self.sort_select.grid(row=0, column=2, padx=10, pady=10, sticky="ew")
 
         # Catalog Cards Frame
@@ -167,24 +181,16 @@ class NGODashboard(ctk.CTkFrame):
         filtered = []
 
         for d in all_available:
-            # 1. Filter search
             if search_query and search_query not in d.food_name.lower():
                 continue
-            # 2. Filter category
             if selected_category != "All Categories" and d.category != selected_category:
                 continue
             
-            # Calculate distance
             dist = haversine_distance(self.ngo_lat, self.ngo_lon, d.latitude, d.longitude)
-            # Add distance attribute dynamically
             d.distance_km = dist if dist != float('inf') else 999.0
-            
-            # Add Expiry Risk Level
             d.expiry_risk = predict_expiry_risk(d.category, d.expiry_time)
-            
             filtered.append(d)
 
-        # 3. Sort postings
         if sort_method == "Soonest Expiry First":
             filtered.sort(key=lambda x: x.expiry_time)
         elif sort_method == "Largest Quantity First":
@@ -193,7 +199,7 @@ class NGODashboard(ctk.CTkFrame):
             filtered.sort(key=lambda x: x.distance_km)
 
         if not filtered:
-            lbl = ctk.CTkLabel(self.catalog_scroll, text="No food postings found matching criteria.", font=ctk.CTkFont(slant="italic"), text_color="gray")
+            lbl = ctk.CTkLabel(self.catalog_scroll, text="No food postings found matching criteria.", font=ctk.CTkFont(family=FONT_FAMILY, size=13, slant="italic"), text_color="gray")
             lbl.grid(row=0, column=0, columnspan=2, pady=50)
             return
 
@@ -207,33 +213,31 @@ class NGODashboard(ctk.CTkFrame):
                 row_idx += 1
 
     def create_food_card(self, parent, row, col, item):
-        card = ctk.CTkFrame(parent, border_width=1, border_color=("gray80", "gray70"), corner_radius=10)
-        card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+        card = ctk.CTkFrame(parent, border_width=1, border_color=("gray80", "gray70"), corner_radius=12)
+        card.grid(row=row, column=col, padx=12, pady=12, sticky="nsew")
         card.grid_columnconfigure(0, weight=1)
 
         # Header Title
-        title_lbl = ctk.CTkLabel(card, text=item.food_name, font=ctk.CTkFont(size=15, weight="bold"), anchor="w")
+        title_lbl = ctk.CTkLabel(card, text=item.food_name.upper(), font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"), anchor="w")
         title_lbl.pack(fill="x", padx=15, pady=(15, 2))
 
         # Subtitle details
         sub_lbl = ctk.CTkLabel(card, text=f"{item.category} • {item.quantity} {item.unit}", 
-                               font=ctk.CTkFont(size=12), text_color="gray", anchor="w")
-        sub_lbl.pack(fill="x", padx=15, pady=(0, 10))
+                               font=ctk.CTkFont(family=FONT_FAMILY, size=12), text_color="gray", anchor="w")
+        sub_lbl.pack(fill="x", padx=15, pady=(0, 8))
 
         # Visual indicator or image
-        img_frame = ctk.CTkFrame(card, height=120, fg_color=("gray90", "gray25"), corner_radius=6)
+        img_frame = ctk.CTkFrame(card, height=150, fg_color=("gray95", "gray20"), corner_radius=8)
         img_frame.pack(fill="x", padx=15, pady=5)
         img_frame.pack_propagate(False)
 
-        # Image render logic
         has_image = False
         if item.image:
             img_path = os.path.join(IMAGES_DIR, item.image)
             if os.path.exists(img_path):
                 try:
                     pil_img = Image.open(img_path)
-                    # Resize while keeping aspect ratio or fit frame
-                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(240, 110))
+                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(330, 140))
                     img_lbl = ctk.CTkLabel(img_frame, image=ctk_img, text="")
                     img_lbl.pack(fill="both", expand=True)
                     has_image = True
@@ -241,32 +245,44 @@ class NGODashboard(ctk.CTkFrame):
                     print(f"Failed to load image: {e}")
         
         if not has_image:
-            # Fallback text placeholder
-            placeholder = ctk.CTkLabel(img_frame, text="🍲 Fresh surplus donation", font=ctk.CTkFont(slant="italic", size=12), text_color="gray")
+            placeholder = ctk.CTkLabel(img_frame, text="🍲 Fresh surplus donation", font=ctk.CTkFont(family=FONT_FAMILY, size=12, slant="italic"), text_color="gray")
             placeholder.pack(expand=True)
 
-        # Metadata Details: Proximity & Expiry Risk
+        # Metadata Details: Proximity & Expiry Risk (Pill tags style)
         meta_frame = ctk.CTkFrame(card, fg_color="transparent")
         meta_frame.pack(fill="x", padx=15, pady=(10, 5))
 
-        dist_txt = f"📍 {item.distance_km} km away" if item.distance_km < 990 else "📍 Location unlisted"
-        dist_lbl = ctk.CTkLabel(meta_frame, text=dist_txt, font=ctk.CTkFont(size=12))
+        dist_txt = f"📍 {item.distance_km} km" if item.distance_km < 990 else "📍 Location N/A"
+        dist_lbl = ctk.CTkLabel(meta_frame, text=dist_txt, font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
+                                fg_color=("#dbeafe", "#1e3a8a"), text_color=("#1e40af", "#bfdbfe"),
+                                corner_radius=12, height=22, padx=8)
         dist_lbl.pack(side="left")
 
         # Expiry risk level badge
         risk = item.expiry_risk
-        risk_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981", "Expired": "#6b7280"}
-        r_color = risk_colors.get(risk, "gray")
+        risk_bg_fg = {
+            "High": (("#fee2e2", "#ef4444"), ("#7f1d1d", "#fca5a5")),
+            "Medium": (("#fef3c7", "#d97706"), ("#78350f", "#fde68a")),
+            "Low": (("#d1fae5", "#059669"), ("#064e3b", "#a7f3d0")),
+            "Expired": (("#e5e7eb", "#4b5563"), ("#1f2937", "#d1d5db"))
+        }
         
-        risk_lbl = ctk.CTkLabel(meta_frame, text=f"AI Expiry: {risk}", text_color=r_color, font=ctk.CTkFont(size=11, weight="bold"))
+        colors = risk_bg_fg.get(risk, (("#e5e7eb", "#4b5563"), ("#1f2937", "#d1d5db")))
+        light_colors, dark_colors = colors[0], colors[1]
+        
+        risk_lbl = ctk.CTkLabel(meta_frame, text=f"AI Expiry: {risk}", font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
+                                fg_color=(light_colors[0], dark_colors[0]), text_color=(light_colors[1], dark_colors[1]), 
+                                corner_radius=12, height=22, padx=8)
         risk_lbl.pack(side="right")
 
-        # Address tooltip/label
-        addr_lbl = ctk.CTkLabel(card, text=f"Pickup: {item.pickup_address}", font=ctk.CTkFont(size=11), text_color="gray", justify="left", anchor="w", wraplength=300)
-        addr_lbl.pack(fill="x", padx=15, pady=2)
+        # Address details
+        addr_lbl = ctk.CTkLabel(card, text=f"Address: {item.pickup_address}", font=ctk.CTkFont(family=FONT_FAMILY, size=11), text_color="gray", justify="left", anchor="w", wraplength=300)
+        addr_lbl.pack(fill="x", padx=15, pady=4)
 
-        # Claim Button
-        btn_claim = ctk.CTkButton(card, text="Claim Collection", height=32, font=ctk.CTkFont(weight="bold"),
+        # Claim Button (Vibrant Coral Color)
+        btn_claim = ctk.CTkButton(card, text="CLAIM COLLECTION", height=35, 
+                                   fg_color=THEME_COLORS["primary"], hover_color=THEME_COLORS["primary"],
+                                   font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
                                    command=lambda item_id=item.donation_id: self.claim_food_item(item_id))
         btn_claim.pack(fill="x", padx=15, pady=(10, 15))
 
@@ -278,7 +294,6 @@ class NGODashboard(ctk.CTkFrame):
         if messagebox.askyesno("Confirm Claim", f"Confirm you want to request collection for:\n{d.food_name} ({d.quantity} {d.unit})?\nThis reserves the item."):
             req = Request.create(donation_id=donation_id, ngo_id=self.ngo_profile.ngo_id)
             if req:
-                # Notify Donor
                 Notification.create(
                     user_id=d.donor_id,
                     title="Collection Claim Filed",
@@ -292,9 +307,9 @@ class NGODashboard(ctk.CTkFrame):
         self.content_area.grid_rowconfigure(0, weight=0)
         self.content_area.grid_rowconfigure(1, weight=1)
 
-        # Title
-        title_lbl = ctk.CTkLabel(self.content_area, text="My Collection Claims Directory", 
-                                 font=ctk.CTkFont(size=20, weight="bold"))
+        # Title (ALL CAPS bold unique font)
+        title_lbl = ctk.CTkLabel(self.content_area, text="MY COLLECTION CLAIMS DIRECTORY", 
+                                 font=ctk.CTkFont(family=FONT_FAMILY, size=20, weight="bold"))
         title_lbl.grid(row=0, column=0, sticky="w", pady=(0, 15))
 
         # Scrollable table container
@@ -305,7 +320,7 @@ class NGODashboard(ctk.CTkFrame):
         # Table headers
         headers = ["Food Item", "Donor", "Contact Phone", "Pickup Location", "Claim Status", "Actions"]
         for col_idx, text in enumerate(headers):
-            lbl = ctk.CTkLabel(self.claims_table, text=text, font=ctk.CTkFont(size=12, weight="bold"))
+            lbl = ctk.CTkLabel(self.claims_table, text=text.upper(), font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"), text_color="gray")
             lbl.grid(row=0, column=col_idx, padx=10, pady=10, sticky="w")
 
         self.refresh_claims_list()
@@ -327,23 +342,25 @@ class NGODashboard(ctk.CTkFrame):
             donor_phone = donor.phone if donor else "Unknown"
 
             # Fields
-            ctk.CTkLabel(self.claims_table, text=d.food_name).grid(row=row_idx, column=0, padx=10, pady=6, sticky="w")
-            ctk.CTkLabel(self.claims_table, text=donor_name).grid(row=row_idx, column=1, padx=10, pady=6, sticky="w")
-            ctk.CTkLabel(self.claims_table, text=donor_phone).grid(row=row_idx, column=2, padx=10, pady=6, sticky="w")
-            ctk.CTkLabel(self.claims_table, text=d.pickup_address, wraplength=200, justify="left").grid(row=row_idx, column=3, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.claims_table, text=d.food_name, font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=0, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.claims_table, text=donor_name, font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=1, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.claims_table, text=donor_phone, font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=2, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.claims_table, text=d.pickup_address, font=ctk.CTkFont(family=FONT_FAMILY, size=12), wraplength=200, justify="left").grid(row=row_idx, column=3, padx=10, pady=6, sticky="w")
             
-            # Request status
-            req_status_colors = {
-                "Pending": "#f59e0b",
-                "Approved": "#10b981", # Ready for collection
-                "Rejected": "#ef4444",
-                "Completed": "#8b5cf6"
+            # Request status (Pill tags)
+            req_themes = {
+                "Pending": (("#fef3c7", "#d97706"), ("#78350f", "#fde68a")),
+                "Approved": (("#d1fae5", "#059669"), ("#064e3b", "#a7f3d0")),
+                "Rejected": (("#fee2e2", "#ef4444"), ("#7f1d1d", "#fca5a5")),
+                "Completed": (("#f3e8ff", "#7e22ce"), ("#581c87", "#e9d5ff"))
             }
-            s_color = req_status_colors.get(r.status, "gray")
+            theme = req_themes.get(r.status, (("#f3f4f6", "#4b5563"), ("#111827", "#9ca3af")))
+            light_colors, dark_colors = theme[0], theme[1]
             
-            # Show customized label if request is approved (meaning claim is approved, collection is pending)
             display_status = "Ready for Collection" if r.status == "Approved" else r.status
-            status_lbl = ctk.CTkLabel(self.claims_table, text=display_status, text_color=s_color, font=ctk.CTkFont(weight="bold"))
+            status_lbl = ctk.CTkLabel(self.claims_table, text=display_status, font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
+                                     fg_color=(light_colors[0], dark_colors[0]), text_color=(light_colors[1], dark_colors[1]),
+                                     corner_radius=10, height=20, padx=8)
             status_lbl.grid(row=row_idx, column=4, padx=10, pady=6, sticky="w")
 
             # Actions cell
@@ -351,14 +368,15 @@ class NGODashboard(ctk.CTkFrame):
             actions_frame.grid(row=row_idx, column=5, padx=10, pady=6, sticky="w")
 
             if r.status == "Approved":
-                # Approved claim means NGO can mark collection complete after picking it up
-                btn_complete = ctk.CTkButton(actions_frame, text="Picked Up ✔", width=80, height=24, fg_color="#10b981", hover_color="#059669",
+                btn_complete = ctk.CTkButton(actions_frame, text="Picked Up ✔", width=80, height=24, 
+                                              fg_color=THEME_COLORS["secondary"], hover_color=THEME_COLORS["secondary"],
+                                              font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                                               command=lambda req_id=r.request_id: self.mark_collection_completed(req_id))
                 btn_complete.pack(side="left")
             elif r.status == "Pending":
-                ctk.CTkLabel(actions_frame, text="Awaiting Donor approval", font=ctk.CTkFont(size=11, slant="italic"), text_color="gray").pack()
+                ctk.CTkLabel(actions_frame, text="Awaiting Donor approval", font=ctk.CTkFont(family=FONT_FAMILY, size=11, slant="italic"), text_color="gray").pack()
             else:
-                ctk.CTkLabel(actions_frame, text="Closed", font=ctk.CTkFont(size=11, slant="italic"), text_color="gray").pack()
+                ctk.CTkLabel(actions_frame, text="Closed", font=ctk.CTkFont(family=FONT_FAMILY, size=11, slant="italic"), text_color="gray").pack()
 
             row_idx += 1
 
@@ -374,7 +392,6 @@ class NGODashboard(ctk.CTkFrame):
             pickup_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             Request.update_status(request_id, "Completed", pickup_time=pickup_now)
             
-            # Notify Donor
             Notification.create(
                 user_id=d.donor_id,
                 title="Food Collection Completed",
@@ -388,19 +405,18 @@ class NGODashboard(ctk.CTkFrame):
         self.content_area.grid_rowconfigure(0, weight=0)
         self.content_area.grid_rowconfigure(1, weight=1)
 
-        # Title / Buttons
         header_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
         header_frame.grid_columnconfigure(0, weight=1)
 
-        title = ctk.CTkLabel(header_frame, text="My Platform Notifications", font=ctk.CTkFont(size=20, weight="bold"))
+        title = ctk.CTkLabel(header_frame, text="MY SYSTEM NOTIFICATIONS", font=ctk.CTkFont(family=FONT_FAMILY, size=20, weight="bold"))
         title.grid(row=0, column=0, sticky="w")
 
-        btn_mark = ctk.CTkButton(header_frame, text="Mark All Read", width=120, fg_color="transparent", text_color=("gray10", "gray90"), border_width=1, border_color=("gray50", "gray50"), hover_color=("gray80", "gray30"),
+        btn_mark = ctk.CTkButton(header_frame, text="MARK ALL READ", width=120, fg_color="transparent", text_color=THEME_COLORS["primary"], border_width=1, border_color=THEME_COLORS["primary"], hover_color=("#fee2e2", "#450a0a"),
+                                  font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                                   command=self.mark_all_notifications_read)
         btn_mark.grid(row=0, column=1, sticky="e")
 
-        # Scrollable Notifications list
         self.notif_scroll = ctk.CTkScrollableFrame(self.content_area)
         self.notif_scroll.grid(row=1, column=0, sticky="nsew")
         self.notif_scroll.grid_columnconfigure(0, weight=1)
@@ -413,23 +429,23 @@ class NGODashboard(ctk.CTkFrame):
 
         notifs = Notification.get_by_user_id(self.user.user_id)
         if not notifs:
-            lbl = ctk.CTkLabel(self.notif_scroll, text="You have no notifications.", font=ctk.CTkFont(slant="italic"), text_color="gray")
+            lbl = ctk.CTkLabel(self.notif_scroll, text="You have no notifications.", font=ctk.CTkFont(family=FONT_FAMILY, size=12, slant="italic"), text_color="gray")
             lbl.pack(pady=40)
             return
 
         for n in notifs:
-            card_border = "#4f46e5" if n.status == "Unread" else "transparent"
+            card_border = THEME_COLORS["primary"] if n.status == "Unread" else "transparent"
             card = ctk.CTkFrame(self.notif_scroll, corner_radius=8, border_width=1 if n.status == "Unread" else 0, border_color=card_border)
             card.pack(fill="x", padx=10, pady=6)
             card.grid_columnconfigure(0, weight=1)
 
-            title_lbl = ctk.CTkLabel(card, text=n.title, font=ctk.CTkFont(size=13, weight="bold"))
+            title_lbl = ctk.CTkLabel(card, text=n.title.upper(), font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"))
             title_lbl.grid(row=0, column=0, padx=15, pady=(10, 2), sticky="w")
 
-            msg_lbl = ctk.CTkLabel(card, text=n.message, font=ctk.CTkFont(size=12), text_color=("gray20", "gray80"), justify="left", wraplength=700)
+            msg_lbl = ctk.CTkLabel(card, text=n.message, font=ctk.CTkFont(family=FONT_FAMILY, size=12), text_color=("gray20", "gray80"), justify="left", wraplength=700)
             msg_lbl.grid(row=1, column=0, padx=15, pady=(2, 10), sticky="w")
 
-            date_lbl = ctk.CTkLabel(card, text=n.created_at, font=ctk.CTkFont(size=10), text_color="gray")
+            date_lbl = ctk.CTkLabel(card, text=n.created_at, font=ctk.CTkFont(family=FONT_FAMILY, size=10), text_color="gray")
             date_lbl.grid(row=0, column=1, rowspan=2, padx=15, pady=10, sticky="e")
 
             if n.status == "Unread":

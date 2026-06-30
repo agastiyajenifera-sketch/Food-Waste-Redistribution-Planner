@@ -4,12 +4,13 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from datetime import datetime, timedelta
-from config import IMAGES_DIR, FOOD_CATEGORIES, FOOD_UNITS
+from PIL import Image
+from config import IMAGES_DIR, FOOD_CATEGORIES, FOOD_UNITS, FONT_FAMILY, THEME_COLORS
 from models import Donation, User, Notification
 from utils import parse_datetime, predict_expiry_risk, extract_coords_from_text
 
 class DonorDashboard(ctk.CTkFrame):
-    """Donor Dashboard layout with sidebar navigation and sub-panels."""
+    """Donor Dashboard layout with sidebar navigation, custom typography, and visual previews."""
     def __init__(self, parent, user, on_logout, change_theme_callback):
         super().__init__(parent)
         self.user = user
@@ -26,39 +27,47 @@ class DonorDashboard(ctk.CTkFrame):
         self.current_theme = ctk.get_appearance_mode().lower()
 
         # Sidebar Frame
-        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0)
+        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0, fg_color=("#f1f5f9", "#111827"))
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         self.sidebar.grid_columnconfigure(0, weight=1)
         self.sidebar.grid_rowconfigure(4, weight=1)  # Spacer
 
-        # Sidebar Title
-        sidebar_title = ctk.CTkLabel(self.sidebar, text="Donor Portal", font=ctk.CTkFont(size=18, weight="bold"))
+        # Sidebar Title (ALL CAPS bold unique font)
+        sidebar_title = ctk.CTkLabel(self.sidebar, text="DONOR PORTAL", 
+                                     font=ctk.CTkFont(family=FONT_FAMILY, size=16, weight="bold"),
+                                     text_color=THEME_COLORS["primary"])
         sidebar_title.grid(row=0, column=0, padx=20, pady=25)
 
         # Nav Buttons
         self.btn_my_donations = ctk.CTkButton(self.sidebar, text="My Donations", anchor="w", fg_color="transparent",
                                               text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                              font=ctk.CTkFont(family=FONT_FAMILY, size=13),
                                               command=lambda: self.switch_view("my_donations"))
         self.btn_my_donations.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
 
         self.btn_new_donation = ctk.CTkButton(self.sidebar, text="Donate Food", anchor="w", fg_color="transparent",
                                               text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                              font=ctk.CTkFont(family=FONT_FAMILY, size=13),
                                               command=lambda: self.switch_view("new_donation"))
         self.btn_new_donation.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
         self.btn_notifs = ctk.CTkButton(self.sidebar, text="Notifications", anchor="w", fg_color="transparent",
                                          text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+                                         font=ctk.CTkFont(family=FONT_FAMILY, size=13),
                                          command=lambda: self.switch_view("notifications"))
         self.btn_notifs.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
 
         # Dark/Light Mode switch
-        self.theme_switch = ctk.CTkSwitch(self.sidebar, text="Dark Mode", command=self.toggle_theme)
+        self.theme_switch = ctk.CTkSwitch(self.sidebar, text="Dark Mode", command=self.toggle_theme,
+                                           progress_color=THEME_COLORS["primary"],
+                                           font=ctk.CTkFont(family=FONT_FAMILY, size=12))
         self.theme_switch.grid(row=5, column=0, padx=20, pady=10, sticky="w")
         if self.current_theme == "dark":
             self.theme_switch.select()
 
-        btn_logout = ctk.CTkButton(self.sidebar, text="Log Out", fg_color="#ef4444", hover_color="#dc2626",
-                                    text_color="white", command=self.on_logout)
+        btn_logout = ctk.CTkButton(self.sidebar, text="LOG OUT", fg_color=THEME_COLORS["primary"], hover_color=THEME_COLORS["primary"],
+                                    text_color="white", font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
+                                    command=self.on_logout)
         btn_logout.grid(row=6, column=0, padx=20, pady=20, sticky="ew")
 
         # Content Frame
@@ -91,9 +100,9 @@ class DonorDashboard(ctk.CTkFrame):
         }
         for name, btn in buttons.items():
             if name == view_name:
-                btn.configure(fg_color=("gray80", "gray25"), font=ctk.CTkFont(weight="bold"))
+                btn.configure(fg_color=THEME_COLORS["accent"], text_color="white", font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"))
             else:
-                btn.configure(fg_color="transparent", font=ctk.CTkFont(weight="normal"))
+                btn.configure(fg_color="transparent", text_color=("gray10", "gray90"), font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="normal"))
 
         if view_name == "my_donations":
             self.show_my_donations_view()
@@ -107,15 +116,19 @@ class DonorDashboard(ctk.CTkFrame):
         self.content_area.grid_rowconfigure(0, weight=0)
         self.content_area.grid_rowconfigure(1, weight=1)
 
-        # Title
+        # Title / Buttons
         header_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
         header_frame.grid_columnconfigure(0, weight=1)
 
-        title = ctk.CTkLabel(header_frame, text="My Registered Donations", font=ctk.CTkFont(size=20, weight="bold"))
+        # Bold ALL CAPS header
+        title = ctk.CTkLabel(header_frame, text="MY REGISTERED SURPLUS DONATIONS", 
+                             font=ctk.CTkFont(family=FONT_FAMILY, size=20, weight="bold"))
         title.grid(row=0, column=0, sticky="w")
 
-        btn_add = ctk.CTkButton(header_frame, text="+ New Donation", width=120, 
+        btn_add = ctk.CTkButton(header_frame, text="+ DONATE FOOD", width=130, 
+                                 fg_color=THEME_COLORS["primary"], hover_color=THEME_COLORS["primary"],
+                                 font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                                  command=lambda: self.switch_view("new_donation"))
         btn_add.grid(row=0, column=1, sticky="e")
 
@@ -127,7 +140,7 @@ class DonorDashboard(ctk.CTkFrame):
         # Table headers
         headers = ["Food Name", "Category", "Quantity", "Expiry Time", "AI Expiry Risk", "Status", "Actions"]
         for col_idx, text in enumerate(headers):
-            lbl = ctk.CTkLabel(self.donations_table, text=text, font=ctk.CTkFont(size=12, weight="bold"))
+            lbl = ctk.CTkLabel(self.donations_table, text=text.upper(), font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"), text_color="gray")
             lbl.grid(row=0, column=col_idx, padx=10, pady=10, sticky="w")
 
         self.refresh_donations_list()
@@ -143,45 +156,59 @@ class DonorDashboard(ctk.CTkFrame):
             # Predict Expiry Risk locally
             risk = predict_expiry_risk(d.category, d.expiry_time)
             
-            ctk.CTkLabel(self.donations_table, text=d.food_name).grid(row=row_idx, column=0, padx=10, pady=6, sticky="w")
-            ctk.CTkLabel(self.donations_table, text=d.category).grid(row=row_idx, column=1, padx=10, pady=6, sticky="w")
-            ctk.CTkLabel(self.donations_table, text=f"{d.quantity} {d.unit}").grid(row=row_idx, column=2, padx=10, pady=6, sticky="w")
-            ctk.CTkLabel(self.donations_table, text=d.expiry_time).grid(row=row_idx, column=3, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.donations_table, text=d.food_name, font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=0, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.donations_table, text=d.category, font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=1, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.donations_table, text=f"{d.quantity} {d.unit}", font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=2, padx=10, pady=6, sticky="w")
+            ctk.CTkLabel(self.donations_table, text=d.expiry_time, font=ctk.CTkFont(family=FONT_FAMILY, size=12)).grid(row=row_idx, column=3, padx=10, pady=6, sticky="w")
             
-            # Risk Tag Styling
-            risk_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981", "Expired": "#6b7280", "Unknown": "gray"}
-            risk_color = risk_colors.get(risk, "gray")
-            
-            risk_lbl = ctk.CTkLabel(self.donations_table, text=risk, text_color=risk_color, font=ctk.CTkFont(weight="bold"))
+            # Risk Tag Styling (Pill tag)
+            risk_bg_fg = {
+                "High": (("#fee2e2", "#ef4444"), ("#7f1d1d", "#fca5a5")),
+                "Medium": (("#fef3c7", "#d97706"), ("#78350f", "#fde68a")),
+                "Low": (("#d1fae5", "#059669"), ("#064e3b", "#a7f3d0")),
+                "Expired": (("#e5e7eb", "#4b5563"), ("#1f2937", "#d1d5db")),
+                "Unknown": (("#f3f4f6", "#6b7280"), ("#111827", "#9ca3af"))
+            }
+            theme = risk_bg_fg.get(risk, (("#f3f4f6", "#6b7280"), ("#111827", "#9ca3af")))
+            light_colors, dark_colors = theme[0], theme[1]
+            risk_lbl = ctk.CTkLabel(self.donations_table, text=risk, font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
+                                    fg_color=(light_colors[0], dark_colors[0]), text_color=(light_colors[1], dark_colors[1]),
+                                    corner_radius=10, height=20, padx=8)
             risk_lbl.grid(row=row_idx, column=4, padx=10, pady=6, sticky="w")
 
-            status_colors = {
-                "Pending": "#f59e0b",
-                "Approved": "#10b981",
-                "Rejected": "#ef4444",
-                "Requested": "#3b82f6",
-                "Collected": "#8b5cf6",
-                "Expired": "#6b7280"
+            # Status Badge color styling (Pill tags)
+            status_themes = {
+                "Pending": (("#fef3c7", "#d97706"), ("#78350f", "#fde68a")),
+                "Approved": (("#d1fae5", "#059669"), ("#064e3b", "#a7f3d0")),
+                "Rejected": (("#fee2e2", "#ef4444"), ("#7f1d1d", "#fca5a5")),
+                "Requested": (("#dbeafe", "#1e40af"), ("#1e3a8a", "#bfdbfe")),
+                "Collected": (("#f3e8ff", "#7e22ce"), ("#581c87", "#e9d5ff")),
+                "Expired": (("#f3f4f6", "#4b5563"), ("#111827", "#9ca3af"))
             }
-            s_color = status_colors.get(d.status, "#6b7280")
-            status_lbl = ctk.CTkLabel(self.donations_table, text=d.status, text_color=s_color, font=ctk.CTkFont(weight="bold"))
+            theme_s = status_themes.get(d.status, (("#f3f4f6", "#4b5563"), ("#111827", "#9ca3af")))
+            light_s, dark_s = theme_s[0], theme_s[1]
+            
+            status_lbl = ctk.CTkLabel(self.donations_table, text=d.status, font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
+                                      fg_color=(light_s[0], dark_s[0]), text_color=(light_s[1], dark_s[1]),
+                                      corner_radius=10, height=20, padx=8)
             status_lbl.grid(row=row_idx, column=5, padx=10, pady=6, sticky="w")
 
             # Actions Frame (Edit/Delete)
             act_frame = ctk.CTkFrame(self.donations_table, fg_color="transparent")
             act_frame.grid(row=row_idx, column=6, padx=10, pady=6, sticky="w")
 
-            # Allow Edit/Delete only if not yet collected
             if d.status not in ["Collected", "Expired"]:
-                btn_edit = ctk.CTkButton(act_frame, text="Edit", width=45, height=24, fg_color="#3b82f6", hover_color="#2563eb",
+                btn_edit = ctk.CTkButton(act_frame, text="Edit", width=45, height=24, fg_color=THEME_COLORS["info"], hover_color=THEME_COLORS["info"],
+                                          font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                                           command=lambda item_id=d.donation_id: self.edit_donation(item_id))
                 btn_edit.pack(side="left", padx=2)
 
-                btn_del = ctk.CTkButton(act_frame, text="Delete", width=50, height=24, fg_color="#ef4444", hover_color="#dc2626",
+                btn_del = ctk.CTkButton(act_frame, text="Delete", width=50, height=24, fg_color=THEME_COLORS["primary"], hover_color=THEME_COLORS["primary"],
+                                         font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                                          command=lambda item_id=d.donation_id: self.delete_donation(item_id))
                 btn_del.pack(side="left", padx=2)
             else:
-                ctk.CTkLabel(act_frame, text="Closed", text_color="gray", font=ctk.CTkFont(size=11, slant="italic")).pack()
+                ctk.CTkLabel(act_frame, text="Closed", text_color="gray", font=ctk.CTkFont(family=FONT_FAMILY, size=11, slant="italic")).pack()
 
             row_idx += 1
 
@@ -190,12 +217,12 @@ class DonorDashboard(ctk.CTkFrame):
         self.content_area.grid_rowconfigure(0, weight=0)
         self.content_area.grid_rowconfigure(1, weight=1)
 
-        title_text = "Edit Donation Posting" if donation_obj else "Register New Food Donation"
+        title_text = "EDIT FOOD DONATION DETAILS" if donation_obj else "REGISTER NEW FOOD DONATION"
         self.editing_donation_id = donation_obj.donation_id if donation_obj else None
         self.selected_image_path = donation_obj.image if donation_obj else None
 
-        # Title
-        title_lbl = ctk.CTkLabel(self.content_area, text=title_text, font=ctk.CTkFont(size=20, weight="bold"))
+        # Title (ALL CAPS bold unique font)
+        title_lbl = ctk.CTkLabel(self.content_area, text=title_text, font=ctk.CTkFont(family=FONT_FAMILY, size=20, weight="bold"))
         title_lbl.grid(row=0, column=0, sticky="w", pady=(0, 15))
 
         # Form scroll frame
@@ -204,61 +231,63 @@ class DonorDashboard(ctk.CTkFrame):
         form.grid_columnconfigure((0, 1), weight=1)
 
         # Field 1: Food Name
-        ctk.CTkLabel(form, text="Food Item Name:", font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, padx=20, pady=(15, 2), sticky="w")
-        self.entry_name = ctk.CTkEntry(form, placeholder_text="e.g. Mixed Vegetable Rice, Wheat Bread", height=35)
+        ctk.CTkLabel(form, text="Food Item Name:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=0, column=0, padx=20, pady=(15, 2), sticky="w")
+        self.entry_name = ctk.CTkEntry(form, placeholder_text="e.g. Mixed Vegetable Rice, Wheat Bread", height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.entry_name.grid(row=1, column=0, columnspan=2, padx=20, pady=5, sticky="ew")
 
         # Field 2: Category & Unit
-        ctk.CTkLabel(form, text="Food Category:", font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, padx=20, pady=(10, 2), sticky="w")
-        self.combo_category = ctk.CTkOptionMenu(form, values=FOOD_CATEGORIES, height=35)
+        ctk.CTkLabel(form, text="Food Category:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=2, column=0, padx=20, pady=(10, 2), sticky="w")
+        self.combo_category = ctk.CTkOptionMenu(form, values=FOOD_CATEGORIES, height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.combo_category.grid(row=3, column=0, padx=20, pady=5, sticky="ew")
 
-        ctk.CTkLabel(form, text="Unit of Measure:", font=ctk.CTkFont(weight="bold")).grid(row=2, column=1, padx=20, pady=(10, 2), sticky="w")
-        self.combo_unit = ctk.CTkOptionMenu(form, values=FOOD_UNITS, height=35)
+        ctk.CTkLabel(form, text="Unit of Measure:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=2, column=1, padx=20, pady=(10, 2), sticky="w")
+        self.combo_unit = ctk.CTkOptionMenu(form, values=FOOD_UNITS, height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.combo_unit.grid(row=3, column=1, padx=20, pady=5, sticky="ew")
 
         # Field 3: Quantity & Type
-        ctk.CTkLabel(form, text="Quantity:", font=ctk.CTkFont(weight="bold")).grid(row=4, column=0, padx=20, pady=(10, 2), sticky="w")
-        self.entry_quantity = ctk.CTkEntry(form, placeholder_text="e.g. 15.5, 30", height=35)
+        ctk.CTkLabel(form, text="Quantity:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=4, column=0, padx=20, pady=(10, 2), sticky="w")
+        self.entry_quantity = ctk.CTkEntry(form, placeholder_text="e.g. 15.5, 30", height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.entry_quantity.grid(row=5, column=0, padx=20, pady=5, sticky="ew")
 
-        ctk.CTkLabel(form, text="Food Package/Prep Type:", font=ctk.CTkFont(weight="bold")).grid(row=4, column=1, padx=20, pady=(10, 2), sticky="w")
-        self.seg_type = ctk.CTkSegmentedButton(form, values=["Cooked", "Packaged", "Fresh"], height=35)
+        ctk.CTkLabel(form, text="Food Package/Prep Type:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=4, column=1, padx=20, pady=(10, 2), sticky="w")
+        self.seg_type = ctk.CTkSegmentedButton(form, values=["Cooked", "Packaged", "Fresh"], height=35,
+                                               selected_color=THEME_COLORS["primary"][1],
+                                               font=ctk.CTkFont(family=FONT_FAMILY, size=12))
         self.seg_type.grid(row=5, column=1, padx=20, pady=5, sticky="ew")
         self.seg_type.set("Cooked")
 
         # Field 4: Expiry Time
-        # Default: 24 hours from now
         default_expiry = (datetime.now() + timedelta(hours=24)).strftime("%Y-%m-%d %H:%M")
-        ctk.CTkLabel(form, text="Expiration Date & Time (YYYY-MM-DD HH:MM):", font=ctk.CTkFont(weight="bold")).grid(row=6, column=0, padx=20, pady=(10, 2), sticky="w")
-        self.entry_expiry = ctk.CTkEntry(form, placeholder_text="YYYY-MM-DD HH:MM", height=35)
+        ctk.CTkLabel(form, text="Expiration Date & Time (YYYY-MM-DD HH:MM):", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=6, column=0, padx=20, pady=(10, 2), sticky="w")
+        self.entry_expiry = ctk.CTkEntry(form, placeholder_text="YYYY-MM-DD HH:MM", height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.entry_expiry.grid(row=7, column=0, padx=20, pady=5, sticky="ew")
         self.entry_expiry.insert(0, default_expiry)
 
         # Field 5: Pickup Location & Contact
-        ctk.CTkLabel(form, text="Pickup Address Location:", font=ctk.CTkFont(weight="bold")).grid(row=8, column=0, padx=20, pady=(10, 2), sticky="w")
-        self.entry_location = ctk.CTkEntry(form, placeholder_text="Pickup address (lat, lon)", height=35)
+        ctk.CTkLabel(form, text="Pickup Address Location:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=8, column=0, padx=20, pady=(10, 2), sticky="w")
+        self.entry_location = ctk.CTkEntry(form, placeholder_text="Pickup address (lat, lon)", height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.entry_location.grid(row=9, column=0, padx=20, pady=5, sticky="ew")
         self.entry_location.insert(0, self.user.address if self.user.address else "")
 
-        ctk.CTkLabel(form, text="Donor Contact Number:", font=ctk.CTkFont(weight="bold")).grid(row=8, column=1, padx=20, pady=(10, 2), sticky="w")
-        self.entry_phone = ctk.CTkEntry(form, placeholder_text="Phone number", height=35)
+        ctk.CTkLabel(form, text="Donor Contact Number:", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=8, column=1, padx=20, pady=(10, 2), sticky="w")
+        self.entry_phone = ctk.CTkEntry(form, placeholder_text="Phone number", height=35, font=ctk.CTkFont(family=FONT_FAMILY, size=13))
         self.entry_phone.grid(row=9, column=1, padx=20, pady=5, sticky="ew")
         self.entry_phone.insert(0, self.user.phone if self.user.phone else "")
 
-        # Field 6: Image Upload
-        ctk.CTkLabel(form, text="Food Item Photograph (Optional):", font=ctk.CTkFont(weight="bold")).grid(row=10, column=0, padx=20, pady=(10, 2), sticky="w")
+        # Field 6: Image Upload frame (Clickable preview frame)
+        ctk.CTkLabel(form, text="Food Item Photograph (Optional):", font=ctk.CTkFont(family=FONT_FAMILY, weight="bold")).grid(row=10, column=0, padx=20, pady=(10, 2), sticky="w")
         
-        self.img_label_text = tk.StringVar(value="No photo attached" if not self.selected_image_path else f"Photo: {os.path.basename(self.selected_image_path)}")
-        self.lbl_img_status = ctk.CTkLabel(form, textvariable=self.img_label_text, font=ctk.CTkFont(slant="italic"), text_color="gray")
-        self.lbl_img_status.grid(row=11, column=0, padx=20, pady=2, sticky="w")
+        self.upload_card = ctk.CTkFrame(form, height=150, width=320, border_width=2, border_color=THEME_COLORS["primary"], corner_radius=10)
+        self.upload_card.grid(row=11, column=0, columnspan=2, padx=20, pady=8, sticky="w")
+        self.upload_card.grid_propagate(False)
+        self.upload_card.bind("<Button-1>", lambda e: self.upload_donation_image())
         
-        btn_upload = ctk.CTkButton(form, text="📷 Choose File...", width=150, fg_color=("gray80", "gray30"), text_color=("gray10", "gray90"), hover_color=("gray70", "gray40"),
-                                   command=self.upload_donation_image)
-        btn_upload.grid(row=12, column=0, padx=20, pady=5, sticky="w")
+        self.render_image_preview()
 
-        # Submit button
-        btn_submit = ctk.CTkButton(form, text="Submit Donation Request", height=40, font=ctk.CTkFont(weight="bold"),
+        # Submit button (styled with colorful primary)
+        btn_submit = ctk.CTkButton(form, text="SUBMIT DONATION REQUEST", height=40, 
+                                   fg_color=THEME_COLORS["primary"], hover_color=THEME_COLORS["primary"],
+                                   font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"),
                                    command=self.submit_donation_form)
         btn_submit.grid(row=13, column=0, columnspan=2, padx=20, pady=30, sticky="ew")
 
@@ -275,7 +304,38 @@ class DonorDashboard(ctk.CTkFrame):
             self.entry_location.insert(0, donation_obj.pickup_address)
             self.entry_phone.delete(0, "end")
             self.entry_phone.insert(0, donation_obj.phone if hasattr(donation_obj, "phone") else self.user.phone)
-            btn_submit.configure(text="Save Modifications")
+            btn_submit.configure(text="SAVE MODIFICATIONS")
+            self.render_image_preview()
+
+    def render_image_preview(self):
+        """Displays image preview inside upload frame."""
+        for widget in self.upload_card.winfo_children():
+            widget.destroy()
+
+        if self.selected_image_path:
+            img_path = self.selected_image_path
+            if not os.path.isabs(img_path):
+                img_path = os.path.join(IMAGES_DIR, img_path)
+
+            if os.path.exists(img_path):
+                try:
+                    pil_img = Image.open(img_path)
+                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(310, 140))
+                    
+                    lbl_preview = ctk.CTkLabel(self.upload_card, image=ctk_img, text="")
+                    lbl_preview.pack(fill="both", expand=True, padx=4, pady=4)
+                    lbl_preview.bind("<Button-1>", lambda e: self.upload_donation_image())
+                    
+                    hint_lbl = ctk.CTkLabel(lbl_preview, text="Click to replace photo", fg_color=("#1e293b", "#0f172a"), text_color="white", font=ctk.CTkFont(family=FONT_FAMILY, size=10, weight="bold"))
+                    hint_lbl.place(relx=0.5, rely=0.85, anchor="center")
+                    return
+                except Exception as e:
+                    print(f"Failed to show preview: {e}")
+        
+        placeholder_lbl = ctk.CTkLabel(self.upload_card, text="📷\nClick here to select a photograph\n(PNG, JPG, WEBP)", 
+                                       font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="normal"), justify="center")
+        placeholder_lbl.pack(expand=True)
+        placeholder_lbl.bind("<Button-1>", lambda e: self.upload_donation_image())
 
     def upload_donation_image(self):
         file_path = filedialog.askopenfilename(
@@ -283,7 +343,7 @@ class DonorDashboard(ctk.CTkFrame):
         )
         if file_path:
             self.selected_image_path = file_path
-            self.img_label_text.set(f"Selected: {os.path.basename(file_path)}")
+            self.render_image_preview()
 
     def submit_donation_form(self):
         name = self.entry_name.get().strip()
@@ -317,13 +377,10 @@ class DonorDashboard(ctk.CTkFrame):
             messagebox.showerror("Error", "Expiration time must be in the future.")
             return
 
-        # Extract coordinates
         lat, lon = extract_coords_from_text(address)
 
-        # Handle image copying to assets
         final_image_name = None
         if self.selected_image_path and os.path.exists(self.selected_image_path):
-            # Check if it is a new upload
             if not self.selected_image_path.startswith(IMAGES_DIR):
                 ext = os.path.splitext(self.selected_image_path)[1]
                 filename = f"donation_{int(datetime.now().timestamp())}{ext}"
@@ -334,13 +391,9 @@ class DonorDashboard(ctk.CTkFrame):
                 except Exception as e:
                     print(f"Error copying image: {e}")
             else:
-                # Keep existing
                 final_image_name = os.path.basename(self.selected_image_path)
 
-        # Save to database
         if self.editing_donation_id:
-            # Edit existing
-            # We keep status as "Pending" or update it. If edited, let's reset to "Pending" for admin re-audit
             d = Donation.update(
                 donation_id=self.editing_donation_id,
                 food_name=name,
@@ -352,12 +405,11 @@ class DonorDashboard(ctk.CTkFrame):
                 pickup_address=address,
                 latitude=lat,
                 longitude=lon,
-                status="Pending",  # Reset audit status
+                status="Pending",
                 image=final_image_name
             )
             msg = "Donation modifications saved. It has been queued for Admin audit."
         else:
-            # Create new
             d = Donation.create(
                 donor_id=self.user.user_id,
                 food_name=name,
@@ -372,7 +424,6 @@ class DonorDashboard(ctk.CTkFrame):
                 status="Pending",
                 image=final_image_name
             )
-            # Notify Admin
             admins = User.get_all_by_role("Admin")
             for admin in admins:
                 Notification.create(
@@ -400,19 +451,18 @@ class DonorDashboard(ctk.CTkFrame):
         self.content_area.grid_rowconfigure(0, weight=0)
         self.content_area.grid_rowconfigure(1, weight=1)
 
-        # Title / Buttons
         header_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
         header_frame.grid_columnconfigure(0, weight=1)
 
-        title = ctk.CTkLabel(header_frame, text="My Platform Notifications", font=ctk.CTkFont(size=20, weight="bold"))
+        title = ctk.CTkLabel(header_frame, text="MY SYSTEM NOTIFICATIONS", font=ctk.CTkFont(family=FONT_FAMILY, size=20, weight="bold"))
         title.grid(row=0, column=0, sticky="w")
 
-        btn_mark = ctk.CTkButton(header_frame, text="Mark All Read", width=120, fg_color="transparent", text_color=("gray10", "gray90"), border_width=1, border_color=("gray50", "gray50"), hover_color=("gray80", "gray30"),
+        btn_mark = ctk.CTkButton(header_frame, text="MARK ALL READ", width=120, fg_color="transparent", text_color=THEME_COLORS["primary"], border_width=1, border_color=THEME_COLORS["primary"], hover_color=("#fee2e2", "#450a0a"),
+                                  font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
                                   command=self.mark_all_notifications_read)
         btn_mark.grid(row=0, column=1, sticky="e")
 
-        # Scrollable Notifications list
         self.notif_scroll = ctk.CTkScrollableFrame(self.content_area)
         self.notif_scroll.grid(row=1, column=0, sticky="nsew")
         self.notif_scroll.grid_columnconfigure(0, weight=1)
@@ -425,27 +475,25 @@ class DonorDashboard(ctk.CTkFrame):
 
         notifs = Notification.get_by_user_id(self.user.user_id)
         if not notifs:
-            lbl = ctk.CTkLabel(self.notif_scroll, text="You have no notifications.", font=ctk.CTkFont(slant="italic"), text_color="gray")
+            lbl = ctk.CTkLabel(self.notif_scroll, text="You have no notifications.", font=ctk.CTkFont(family=FONT_FAMILY, size=12, slant="italic"), text_color="gray")
             lbl.pack(pady=40)
             return
 
         for n in notifs:
-            # Card container for notification
-            card_border = "#4f46e5" if n.status == "Unread" else "transparent"
+            card_border = THEME_COLORS["primary"] if n.status == "Unread" else "transparent"
             card = ctk.CTkFrame(self.notif_scroll, corner_radius=8, border_width=1 if n.status == "Unread" else 0, border_color=card_border)
             card.pack(fill="x", padx=10, pady=6)
             card.grid_columnconfigure(0, weight=1)
 
-            title_lbl = ctk.CTkLabel(card, text=n.title, font=ctk.CTkFont(size=13, weight="bold"))
+            title_lbl = ctk.CTkLabel(card, text=n.title.upper(), font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"))
             title_lbl.grid(row=0, column=0, padx=15, pady=(10, 2), sticky="w")
 
-            msg_lbl = ctk.CTkLabel(card, text=n.message, font=ctk.CTkFont(size=12), text_color=("gray20", "gray80"), justify="left", wraplength=700)
+            msg_lbl = ctk.CTkLabel(card, text=n.message, font=ctk.CTkFont(family=FONT_FAMILY, size=12), text_color=("gray20", "gray80"), justify="left", wraplength=700)
             msg_lbl.grid(row=1, column=0, padx=15, pady=(2, 10), sticky="w")
 
-            date_lbl = ctk.CTkLabel(card, text=n.created_at, font=ctk.CTkFont(size=10), text_color="gray")
+            date_lbl = ctk.CTkLabel(card, text=n.created_at, font=ctk.CTkFont(family=FONT_FAMILY, size=10), text_color="gray")
             date_lbl.grid(row=0, column=1, rowspan=2, padx=15, pady=10, sticky="e")
 
-            # Mark as read on click or simply leave as read when viewed
             if n.status == "Unread":
                 Notification.mark_as_read(n.notification_id)
 

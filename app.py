@@ -24,6 +24,10 @@ class FoodShareApp(ctk.CTk):
         ctk.set_appearance_mode(DEFAULT_THEME)
         ctk.set_default_color_theme(COLOR_THEME)
 
+        # Apply unique custom background colors globally
+        from config import THEME_COLORS
+        self.configure(fg_color=(THEME_COLORS["bg_light"], THEME_COLORS["bg_dark"]))
+
         # Initialize and seed database if empty
         database.initialize()
 

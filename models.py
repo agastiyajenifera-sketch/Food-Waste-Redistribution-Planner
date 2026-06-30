@@ -248,8 +248,8 @@ class Donation:
         return cls.get_by_id(donation_id)
 
     @classmethod
-    def update(cls, donation_id, food_name, category, quantity, unit, cooked_or_packaged, 
-               expiry_time, pickup_address, latitude=None, longitude=None, status=None, image=None):
+    def update(cls, donation_id, food_name=None, category=None, quantity=None, unit=None, cooked_or_packaged=None, 
+               expiry_time=None, pickup_address=None, latitude=None, longitude=None, status=None, image=None):
         conn = get_connection()
         cursor = conn.cursor()
         

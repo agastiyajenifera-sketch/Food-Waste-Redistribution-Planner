@@ -157,23 +157,23 @@ def seed_database():
     donations_data = [
         # Approved & Available Cooked Food
         (user_ids["donor.hotel@foodwaste.org"], "Veg Rice & Curry", "Cooked Food", 15.0, "servings", "Cooked", 
-         (now + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"), "123 Luxury Avenue, downtown", 12.9715, 77.5946, "Approved", None, now_str),
+         (now + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"), "123 Luxury Avenue, downtown", 12.9715, 77.5946, "Approved", "veg_rice_curry.jpg", now_str),
         
         # Pending Packaged Food
         (user_ids["donor.market@foodwaste.org"], "Wheat Bread Loaves", "Bakery Items", 20.0, "pieces", "Packaged", 
-         (now + timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"), "456 Market Road, suburbs", 12.9345, 77.6201, "Pending", None, now_str),
+         (now + timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"), "456 Market Road, suburbs", 12.9345, 77.6201, "Pending", "wheat_bread.jpg", now_str),
         
         # Expired (Low Risk at first, but set back in time)
         (user_ids["donor.hotel@foodwaste.org"], "Fruit Salad Cups", "Fresh Produce", 10.0, "pieces", "Fresh", 
-         (now - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"), "123 Luxury Avenue, downtown", 12.9715, 77.5946, "Approved", None, now_str),
+         (now - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"), "123 Luxury Avenue, downtown", 12.9715, 77.5946, "Approved", "fruit_salad.jpg", now_str),
         
         # Approved and already requested
         (user_ids["donor.market@foodwaste.org"], "Fresh Apples", "Fresh Produce", 5.0, "kg", "Fresh", 
-         (now + timedelta(days=4)).strftime("%Y-%m-%d %H:%M:%S"), "456 Market Road, suburbs", 12.9345, 77.6201, "Approved", None, now_str),
+         (now + timedelta(days=4)).strftime("%Y-%m-%d %H:%M:%S"), "456 Market Road, suburbs", 12.9345, 77.6201, "Approved", "fresh_apples.jpg", now_str),
 
         # Completed/Collected donation
         (user_ids["donor.hotel@foodwaste.org"], "Pasta Marinara", "Cooked Food", 25.0, "servings", "Cooked", 
-         (now - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"), "123 Luxury Avenue, downtown", 12.9715, 77.5946, "Collected", None, now_str),
+         (now - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"), "123 Luxury Avenue, downtown", 12.9715, 77.5946, "Collected", "pasta_marinara.jpg", now_str),
     ]
 
     for donation in donations_data:
