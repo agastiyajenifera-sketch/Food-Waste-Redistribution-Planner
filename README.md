@@ -1,81 +1,93 @@
-# Food Waste Redistribution Planner (FoodShare Desktop App)
+# 🥗 FoodShare: Food Waste Redistribution Planner
 
-A modern, AI-powered desktop application built using Python and **CustomTkinter** to combat food waste. It connects food donors (restaurants, hotels, supermarkets) with local non-governmental organizations (NGOs) to coordinate immediate collection and distribution of surplus food.
+A neat, modern, and highly professional web application built using Python and **Streamlit** to coordinate food surplus rescue. The platform connects verified food donors (hotels, restaurants, supermarkets) with local non-governmental organizations (NGOs) to minimize food waste and support communities in need.
+
+![Indian Food Background](assets/images/indian_food_bg.jpg)
 
 ---
 
-## 🌟 Key Features
+## 🌟 Core Features
 
-### 1. Unified Authentication & Role-Based Dashboards
+### 1. Unified Authentication & Glassmorphism Portal
+- Centered, floating glass card login and registration screens decorated with a blurred Indian food background image.
+- Password security powered by SHA-256 hashing.
+
+### 2. Role-Based Dashboards
 - **System Administrator Console**:
-  - Audit and approve/reject food postings.
-  - Search platform members and delete records.
-  - Interactive visual analytics (Pie & Bar charts).
-  - Export system metrics and activity reports to CSV or plain text.
+  - **Overview Dashboard**: Tracks statistics (Donors, NGOs, Active Donations, Rescued Food) with visual cards.
+  - **Donation Audit**: Inspects, approves, or rejects pending postings from donors.
+  - **User Manager**: Segmented tabs separating verified Food Donors and NGO Partners, containing live performance analytics and coordinates.
+  - **Visual Analytics**: Dynamic charts representing category shares and status distributions using Matplotlib.
+  - **Generate Reports**: Downloadable CSV spreadsheets for system audits.
 - **Donor Portal**:
-  - Post surplus food donations.
-  - Track expiry dates and automatically predict expiration risk using AI.
-  - Upload food item photos.
-  - Edit or delete pending postings.
-  - Receive real-time system notifications.
+  - **My Donations**: Real-time listing tracking with expiration risk analysis.
+  - **Donate Food**: Simplified registration form to post surplus items, set expiry hours, and auto-parse coordinates.
+  - **Inbox**: In-app notifications when claims or approvals change.
 - **NGO Portal**:
-  - Browse available food in a modern catalog card layout.
-  - Filter food by categories, search by item names, and sort.
-  - Proximity calculation: Auto-calculates distances to food pickup locations using the Haversine formula.
-  - Request collection claims and track log history.
-  - Receive notifications when new donations are approved.
+  - **Browse Catalog**: Proximity catalog displaying approved surplus food items sorted by expiry hours, largest quantities, or nearest distances.
+  - **My Claims**: Active collection checklists to mark claims as picked up or completed.
+  - **Inbox**: Notification panel when new food posts are listed.
 
-### 2. Intelligent AI Features
-- **Expiry Risk Predictor**: Evaluates time remaining and food vulnerability (e.g. Cooked Food vs. Packaged Food) to classify risk levels (High, Medium, Low) dynamically.
-- **Nearest NGO Recommender**: Computes coordinates and distance proximity to recommend matching distribution partners.
-- **Food Waste Analytics Engine**: Evaluates database histories to print smart recommendations and insights on reducing waste on the admin dashboard.
+### 3. Intelligent Algorithms
+- **AI Expiry Risk Predictor**: Evaluates time decay and food category (Cooked Food, Produce, Dairy, Packaged) to flag items as High, Medium, Low risk dynamically.
+- **Proximity Distance Parser**: Auto-extracts map coordinates from address text and computes geographical distances using the **Haversine formula**.
+- **AI Waste Insights**: Analyzes database history to output redistribution rates and recommend optimization steps on the admin console.
+
+---
+
+## 📁 Database Schema (CSV Persistence)
+
+Data is saved locally within the `./data/` directory across five structured tables:
+1. `users.csv`: Stores user accounts, emails, hashed passwords, contact details, and platform roles.
+2. `ngos.csv`: Holds NGO organizational names, registration numbers, locations, and coordinate profiles.
+3. `donations.csv`: Tracks surplus listings, donor IDs, quantities, units, statuses (Pending, Approved, Requested, Collected, Expired), and expiry timelines.
+4. `requests.csv`: Coordinates claims, request dates, pickup timelines, and completed rescue logs.
+5. `notifications.csv`: Tracks notification titles, timestamps, messages, and read/unread statuses.
 
 ---
 
 ## 🛠️ Technology Stack
-- **User Interface**: CustomTkinter (Python GUI framework)
-- **Data Plotting**: Matplotlib & Pandas (embedded into Tkinter canvas)
-- **Database**: SQLite (direct database connection via standard `sqlite3` library)
-- **Security**: SHA-256 password hashing
+- **Framework**: Streamlit (Python Web Application Engine)
+- **Data Tables**: Pandas (structured loaders and analytics processing)
+- **Visualization**: Matplotlib (custom chart plotting)
+- **Database Engine**: File-based CSV persistence with generic validation parsers.
+- **Styling**: Custom CSS injecting Outfit typography, glassmorphism containers, and card hover animations.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.8 or higher installed on your system.
+- Python 3.8 or higher installed.
 
-### Step 1: Set Up Virtual Environment (Recommended)
-Open a terminal in the project directory:
+### Step 1: Clone or Open the Directory
+Open a terminal in the folder:
 ```powershell
 # Windows PowerShell
 python -m venv venv
 .\venv\Scripts\activate
 ```
 
-### Step 2: Install Dependencies
-Install all required libraries listed in `requirements.txt`:
+### Step 2: Install Libraries
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 3: Run the Application
-Launch the desktop application directly using Python:
+### Step 3: Run the Server
 ```bash
-python app.py
+streamlit run app.py
 ```
-On first launch, the SQLite database (`database.db`) will be automatically created and populated with demo seed data.
+On startup, the system will automatically create the `./data/` folder and seed the database tables with default values.
 
 ---
 
-## 🔑 Demonstration Credentials (Seeded Automatically)
+## 🔑 Demonstration Credentials
 
-The database is seeded with the following pre-configured accounts (Password for all accounts follows the pattern shown below):
-
-| Role | Email Address | Password | Details |
+| Role | Email Address | Password | Organization |
 | :--- | :--- | :--- | :--- |
-| **System Admin** | `admin@foodwaste.org` | `AdminPass123!` | Access to the entire platform audit deck, analytics, and user lists. |
-| **Food Donor** | `donor.hotel@foodwaste.org` | `DonorPass123!` | Registered as *Grand Plaza Hotel* (Cooked food donor). |
-| **Food Donor** | `donor.market@foodwaste.org` | `DonorPass123!` | Registered as *FreshFoods Supermarket* (Bakery/Produce donor). |
-| **NGO Organization** | `ngo.hope@foodwaste.org` | `NgoPass123!` | Registered as *Hope Food Distribution*. |
-| **NGO Organization** | `ngo.rescue@foodwaste.org` | `NgoPass123!` | Registered as *Rescue Kitchen Community*. |
+| **System Admin** | `admin@foodwaste.org` | `AdminPass123!` | System Console |
+| **Food Donor** | `donor.hotel@foodwaste.org` | `DonorPass123!` | *Grand Plaza Hotel* |
+| **Food Donor** | `donor.market@foodwaste.org` | `DonorPass123!` | *FreshFoods Supermarket* |
+| **NGO Partner** | `ngo.hope@foodwaste.org` | `NgoPass123!` | *Hope Food Distribution* |
+| **NGO Partner** | `ngo.rescue@foodwaste.org` | `NgoPass123!` | *Rescue Kitchen Community* |
+
