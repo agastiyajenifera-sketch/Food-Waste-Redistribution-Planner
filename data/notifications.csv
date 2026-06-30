@@ -1,0 +1,6 @@
+id,user_id,title,message,status,created_at
+1,2,Welcome to FoodShare!,Thank you for registering.,Unread,2026-06-30 20:00:40
+2,4,New Donation Alert,Grand Plaza Hotel posted Veg Rice & Curry.,Read,2026-06-30 20:00:40
+3,1,New User Registered,Rescue Kitchen Community registered.,Read,2026-06-30 20:00:40
+4,2,Donation Claimed by NGO,NGO 'Hope Food Distribution' requested 'Veg Rice & Curry'.,Unread,2026-06-30 20:02:29
+5,2,Donation Collected,NGO confirmed collection of 'Veg Rice & Curry'.,Unread,2026-06-30 20:02:37

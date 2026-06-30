@@ -1,0 +1,6 @@
+id,full_name,email,password,phone,address,role,created_at
+1,System Admin,admin@foodwaste.org,a44ca5d29f6dab4320ab986479fa985b2d584b11a7da934f7e80bb1449913a07,1234567890,Admin HQ Main City,Admin,2026-06-30 20:00:40
+2,Grand Plaza Hotel,donor.hotel@foodwaste.org,5db6e7dea88a85b870c3b2f96885fee5bc509e3af7f3169f2cd5d269c70394a4,9876543210,"123 Luxury Avenue, downtown (12.9715, 77.5946)",Donor,2026-06-30 20:00:40
+3,FreshFoods Supermarket,donor.market@foodwaste.org,5db6e7dea88a85b870c3b2f96885fee5bc509e3af7f3169f2cd5d269c70394a4,5551234567,"456 Market Road, suburbs (12.9345, 77.6201)",Donor,2026-06-30 20:00:40
+4,Hope NGO Director,ngo.hope@foodwaste.org,738d6782d5a20a6080bdaaea6079193050efa2cfedf3381a654d8382833c0a0f,2223334444,"789 Care Street, downtown (12.9782, 77.5855)",NGO,2026-06-30 20:00:40
+5,Rescue NGO Coordinator,ngo.rescue@foodwaste.org,738d6782d5a20a6080bdaaea6079193050efa2cfedf3381a654d8382833c0a0f,8889990000,"321 Helping Lane, tech hub (12.9562, 77.7011)",NGO,2026-06-30 20:00:40

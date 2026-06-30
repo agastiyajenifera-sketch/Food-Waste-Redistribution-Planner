@@ -1,202 +1,147 @@
-import re
-from datetime import datetime
-import math
-from database import get_connection
+import re, hashlib, math, os, csv
+from datetime import datetime, timedelta
+import streamlit as st
+
+FOOD_CATEGORIES = ["Cooked Food", "Packaged Food", "Fresh Produce", "Bakery Items", "Dairy Products", "Beverages", "Canned Goods"]
+FOOD_UNITS = ["kg", "g", "pieces", "packets", "liters", "servings"]
 
 def validate_email(email):
-    """Validates email format using regex."""
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    return re.match(pattern, email) is not None
+    return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email) is not None
 
 def validate_phone(phone):
-    """Validates phone number format (basic digits checker)."""
     return len(re.sub(r'\D', '', phone)) >= 10
 
+def hash_password(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
 def parse_datetime(dt_str):
-    """Parses a datetime string in YYYY-MM-DD HH:MM:SS format."""
-    try:
-        return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
-    except ValueError:
-        try:
-            return datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
-        except ValueError:
-            return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try: return datetime.strptime(dt_str, fmt)
+        except ValueError: pass
+    return None
 
 def haversine_distance(lat1, lon1, lat2, lon2):
-    """
-    Calculates the great-circle distance between two points on the Earth
-    in kilometers using the Haversine formula.
-    """
-    if None in (lat1, lon1, lat2, lon2):
-        return float('inf')
-        
-    R = 6371.0  # Earth's radius in kilometers
-
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
-
-    dlat = lat2_rad - lat1_rad
-    dlon = lon2_rad - lon1_rad
-
-    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-    return R * c
+    if None in (lat1, lon1, lat2, lon2): return float('inf')
+    r1, o1, r2, o2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    a = math.sin((r2-r1)/2)**2 + math.cos(r1)*math.cos(r2)*math.sin((o2-o1)/2)**2
+    return 6371.0 * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
 def extract_coords_from_text(text):
-    """
-    Helper to extract coordinates like (12.9715, 77.5946) from an address string.
-    Returns (lat, lon) or (None, None) if not found.
-    """
-    if not text:
-        return None, None
-    match = re.search(r'\((-?\d+\.\d+),\s*(-?\d+\.\d+)\)', text)
-    if match:
-        return float(match.group(1)), float(match.group(2))
-    return None, None
+    m = re.search(r'\((-?\d+\.\d+),\s*(-?\d+\.\d+)\)', text or "")
+    return (float(m.group(1)), float(m.group(2))) if m else (None, None)
 
-# --- AI & Analytics Functions ---
-
-def predict_expiry_risk(category, expiry_time_str):
-    """
-    AI Predictor: Predicts food expiration risk (High, Medium, Low)
-    based on the time remaining and the vulnerability of the food category.
-    """
-    expiry_time = parse_datetime(expiry_time_str)
-    if not expiry_time:
-        return "Unknown"
-        
-    now = datetime.now()
-    remaining_hours = (expiry_time - now).total_seconds() / 3600.0
-
-    if remaining_hours <= 0:
-        return "Expired"
-
-    # Category vulnerability classification
-    # High vulnerability: Cooked Food, Dairy Products, Bakery Items (expire fast)
-    # Medium vulnerability: Fresh Produce, Beverages
-    # Low vulnerability: Packaged Food, Canned Goods
-    
-    if category in ["Cooked Food", "Dairy Products", "Bakery Items"]:
-        if remaining_hours < 8:
-            return "High"
-        elif remaining_hours < 18:
-            return "Medium"
-        else:
-            return "Low"
-    elif category in ["Fresh Produce", "Beverages"]:
-        if remaining_hours < 12:
-            return "High"
-        elif remaining_hours < 30:
-            return "Medium"
-        else:
-            return "Low"
-    else:  # Packaged Food, Canned Goods, etc.
-        if remaining_hours < 24:
-            return "High"
-        elif remaining_hours < 72:
-            return "Medium"
-        else:
-            return "Low"
-
-def recommend_nearest_ngos(donation_latitude, donation_longitude, limit=3):
-    """
-    AI Recommender: Computes distances to all registered NGOs using the Haversine
-    formula and returns the top recommended (nearest) NGOs.
-    """
-    if donation_latitude is None or donation_longitude is None:
-        return []
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT ngo_id, organization_name, location, phone, email FROM ngos")
-    ngos = cursor.fetchall()
-    conn.close()
-
-    recommendations = []
-    for ngo in ngos:
-        # Parse coordinates from location string if latitude/longitude are not separate fields
-        loc_str = ngo["location"]
-        ngo_lat, ngo_lon = extract_coords_from_text(loc_str)
-        
-        # If coordinates couldn't be parsed, assign default mock coordinates
-        if ngo_lat is None or ngo_lon is None:
-            # Assign fallback coordinates based on ID
-            ngo_lat = 12.97 + (ngo["ngo_id"] * 0.01)
-            ngo_lon = 77.59 + (ngo["ngo_id"] * 0.01)
-
-        dist = haversine_distance(donation_latitude, donation_longitude, ngo_lat, ngo_lon)
-        recommendations.append({
-            "ngo_id": ngo["ngo_id"],
-            "organization_name": ngo["organization_name"],
-            "distance_km": round(dist, 2),
-            "phone": ngo["phone"],
-            "email": ngo["email"],
-            "location": ngo["location"]
-        })
-
-    # Sort by distance ascending
-    recommendations.sort(key=lambda x: x["distance_km"])
-    return recommendations[:limit]
+def predict_expiry_risk(cat, exp_str):
+    exp = parse_datetime(exp_str)
+    if not exp: return "Unknown"
+    rem = (exp - datetime.now()).total_seconds() / 3600.0
+    if rem <= 0: return "Expired"
+    h_lim, m_lim = (8, 18) if cat in ["Cooked Food", "Dairy Products", "Bakery Items"] else ((12, 30) if cat in ["Fresh Produce", "Beverages"] else (24, 72))
+    return "High" if rem < h_lim else ("Medium" if rem < m_lim else "Low")
 
 def get_food_waste_insights():
-    """
-    AI Analytics: Analyzes historical database records to generate text-based
-    food waste predictions, recommendations, and insights.
-    """
-    conn = get_connection()
-    cursor = conn.cursor()
+    dons, reqs = st.session_state.donations, st.session_state.requests
+    if not dons: return ["Not enough donations listed to generate waste insights yet."]
+    exp_c = sum(1 for d in dons if d["status"] == "Expired")
+    exp_p = (exp_c / len(dons)) * 100
+    cls, exps = {}, {}
+    for d in dons:
+        cat = d["category"]
+        if d["status"] == "Expired": exps[cat] = exps.get(cat, 0) + 1
+        cr = [r for r in reqs if r["donation_id"] == d["id"]]
+        if cr: cls[cat] = cls.get(cat, 0) + len(cr)
+    tc, te = (max(cls, key=cls.get) if cls else None), (max(exps, key=exps.get) if exps else None)
+    res = [f"📊 Plate Rescue Rate: {round(100 - exp_p, 1)}% redistributed.",
+           f"⚠️ High Expiry Risk: {round(exp_p, 1)}% expired." if exp_p > 20 else f"🌱 High Success: Low waste rate of {round(exp_p, 1)}%!"]
+    if tc: res.append(f"🔥 Highest Demand: '{tc}' is most active.")
+    if te: res.append(f"💡 Action: '{te}' has high unclaimed rate.")
+    return res
 
-    # Get percentage of donations that expired without being claimed
-    cursor.execute("SELECT COUNT(*) FROM donations WHERE status = 'Expired'")
-    expired_count = cursor.fetchone()[0]
+DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+CSV_FILES = {
+    "users": (os.path.join(DATA_DIR, "users.csv"), ["id", "full_name", "email", "password", "phone", "address", "role", "created_at"]),
+    "ngos": (os.path.join(DATA_DIR, "ngos.csv"), ["id", "user_id", "organization_name", "registration_number", "location", "phone", "email"]),
+    "donations": (os.path.join(DATA_DIR, "donations.csv"), ["id", "donor_id", "food_name", "category", "quantity", "unit", "cooked_or_packaged", "expiry_time", "pickup_address", "latitude", "longitude", "status", "image", "created_at"]),
+    "requests": (os.path.join(DATA_DIR, "requests.csv"), ["id", "donation_id", "ngo_id", "request_date", "status", "pickup_time"]),
+    "notifications": (os.path.join(DATA_DIR, "notifications.csv"), ["id", "user_id", "title", "message", "status", "created_at"])
+}
 
-    cursor.execute("SELECT COUNT(*) FROM donations")
-    total_count = cursor.fetchone()[0]
+def parse_record(row, tbl):
+    for k in ["id", "user_id", "donation_id", "ngo_id"]:
+        if k in row: row[k] = int(row[k])
+    for k in ["latitude", "longitude", "quantity"]:
+        if k in row:
+            try: row[k] = float(row[k]) if row[k] not in (None, "", "None") else None
+            except ValueError: row[k] = None
+    if tbl == "requests" and row.get("pickup_time") == "": row["pickup_time"] = None
+    return row
+
+def load_csv(name, default_data):
+    path, fields = CSV_FILES[name]
+    if not os.path.exists(path):
+        save_csv(name, default_data)
+        return [dict(r) for r in default_data]
+    records = []
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            try: records.append(parse_record(dict(r), name))
+            except Exception: pass
+    return records
+
+def save_csv(name, data=None):
+    path, fields = CSV_FILES[name]
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if data is None: data = st.session_state[name]
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+        for r in data:
+            cr = {k: ("" if r.get(k) is None else r[k]) for k in fields if k in r}
+            w.writerow(cr)
+
+def save_users_to_csv(): save_csv("users")
+def save_ngos_to_csv(): save_csv("ngos")
+def save_donations_to_csv(): save_csv("donations")
+def save_requests_to_csv(): save_csv("requests")
+def save_notifications_to_csv(): save_csv("notifications")
+
+def initialize_session_state():
+    if "initialized" in st.session_state and st.session_state.initialized: return
+    now = datetime.now()
+    ns = now.strftime("%Y-%m-%d %H:%M:%S")
     
-    # NGO Demand by category
-    cursor.execute("""
-        SELECT d.category, COUNT(r.request_id) as req_count 
-        FROM requests r
-        JOIN donations d ON r.donation_id = d.donation_id
-        GROUP BY d.category
-        ORDER BY req_count DESC
-        LIMIT 1
-    """)
-    top_demanded_category_row = cursor.fetchone()
+    u_seed = [
+        {"id": 1, "full_name": "System Admin", "email": "admin@foodwaste.org", "password": hash_password("AdminPass123!"), "phone": "1234567890", "address": "Admin HQ Main City", "role": "Admin", "created_at": ns},
+        {"id": 2, "full_name": "Grand Plaza Hotel", "email": "donor.hotel@foodwaste.org", "password": hash_password("DonorPass123!"), "phone": "9876543210", "address": "123 Luxury Avenue, downtown (12.9715, 77.5946)", "role": "Donor", "created_at": ns},
+        {"id": 3, "full_name": "FreshFoods Supermarket", "email": "donor.market@foodwaste.org", "password": hash_password("DonorPass123!"), "phone": "5551234567", "address": "456 Market Road, suburbs (12.9345, 77.6201)", "role": "Donor", "created_at": ns},
+        {"id": 4, "full_name": "Hope NGO Director", "email": "ngo.hope@foodwaste.org", "password": hash_password("NgoPass123!"), "phone": "2223334444", "address": "789 Care Street, downtown (12.9782, 77.5855)", "role": "NGO", "created_at": ns},
+        {"id": 5, "full_name": "Rescue NGO Coordinator", "email": "ngo.rescue@foodwaste.org", "password": hash_password("NgoPass123!"), "phone": "8889990000", "address": "321 Helping Lane, tech hub (12.9562, 77.7011)", "role": "NGO", "created_at": ns}
+    ]
+    n_seed = [
+        {"id": 1, "user_id": 4, "organization_name": "Hope Food Distribution", "registration_number": "REG-839210", "location": "789 Care Street, downtown (12.9782, 77.5855)", "phone": "2223334444", "email": "ngo.hope@foodwaste.org"},
+        {"id": 2, "user_id": 5, "organization_name": "Rescue Kitchen Community", "registration_number": "REG-445892", "location": "321 Helping Lane, tech hub (12.9562, 77.7011)", "phone": "8889990000", "email": "ngo.rescue@foodwaste.org"}
+    ]
+    d_seed = [
+        {"id": 1, "donor_id": 2, "food_name": "Veg Rice & Curry", "category": "Cooked Food", "quantity": 15.0, "unit": "servings", "cooked_or_packaged": "Cooked", "expiry_time": (now + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S"), "pickup_address": "123 Luxury Avenue, downtown (12.9715, 77.5946)", "latitude": 12.9715, "longitude": 77.5946, "status": "Approved", "image": "veg_rice_curry.jpg", "created_at": ns},
+        {"id": 2, "donor_id": 3, "food_name": "Wheat Bread Loaves", "category": "Bakery Items", "quantity": 20.0, "unit": "pieces", "cooked_or_packaged": "Packaged", "expiry_time": (now + timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"), "pickup_address": "456 Market Road, suburbs (12.9345, 77.6201)", "latitude": 12.9345, "longitude": 77.6201, "status": "Pending", "image": "wheat_bread.jpg", "created_at": ns},
+        {"id": 3, "donor_id": 2, "food_name": "Fruit Salad Cups", "category": "Fresh Produce", "quantity": 10.0, "unit": "pieces", "cooked_or_packaged": "Fresh", "expiry_time": (now - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"), "pickup_address": "123 Luxury Avenue, downtown (12.9715, 77.5946)", "latitude": 12.9715, "longitude": 77.5946, "status": "Expired", "image": "fruit_salad.jpg", "created_at": ns},
+        {"id": 4, "donor_id": 3, "food_name": "Fresh Apples", "category": "Fresh Produce", "quantity": 5.0, "unit": "kg", "cooked_or_packaged": "Fresh", "expiry_time": (now + timedelta(days=4)).strftime("%Y-%m-%d %H:%M:%S"), "pickup_address": "456 Market Road, suburbs (12.9345, 77.6201)", "latitude": 12.9345, "longitude": 77.6201, "status": "Requested", "image": "fresh_apples.jpg", "created_at": ns},
+        {"id": 5, "donor_id": 2, "food_name": "Pasta Marinara", "category": "Cooked Food", "quantity": 25.0, "unit": "servings", "cooked_or_packaged": "Cooked", "expiry_time": (now - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"), "pickup_address": "123 Luxury Avenue, downtown (12.9715, 77.5946)", "latitude": 12.9715, "longitude": 77.5946, "status": "Collected", "image": "pasta_marinara.jpg", "created_at": ns}
+    ]
+    r_seed = [
+        {"id": 1, "donation_id": 4, "ngo_id": 1, "request_date": (now - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), "status": "Pending", "pickup_time": ""},
+        {"id": 2, "donation_id": 5, "ngo_id": 2, "request_date": (now - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"), "status": "Completed", "pickup_time": (now - timedelta(days=1, hours=22)).strftime("%Y-%m-%d %H:%M:%S")}
+    ]
+    nt_seed = [
+        {"id": 1, "user_id": 2, "title": "Welcome to FoodShare!", "message": "Thank you for registering.", "status": "Unread", "created_at": ns},
+        {"id": 2, "user_id": 4, "title": "New Donation Alert", "message": "Grand Plaza Hotel posted Veg Rice & Curry.", "status": "Unread", "created_at": ns},
+        {"id": 3, "user_id": 1, "title": "New User Registered", "message": "Rescue Kitchen Community registered.", "status": "Read", "created_at": ns}
+    ]
     
-    # Donation categories most likely to expire
-    cursor.execute("""
-        SELECT category, COUNT(*) as exp_count
-        FROM donations
-        WHERE status = 'Expired'
-        GROUP BY category
-        ORDER BY exp_count DESC
-        LIMIT 1
-    """)
-    top_expired_category_row = cursor.fetchone()
-
-    conn.close()
-
-    if total_count == 0:
-        return ["Not enough data in the database to generate waste insights yet."]
-
-    expired_percent = (expired_count / total_count) * 100
-
-    insights = []
-    insights.append(f"📊 Plate Rescue Rate: {round(100 - expired_percent, 1)}% of all registered donations successfully claimed.")
-    
-    if expired_percent > 20:
-        insights.append(f"⚠️ High Expiry Risk: {round(expired_percent, 1)}% of donations expired unclaimed. Recommendation: Donors should register items at least 12 hours prior to expiration.")
-    else:
-        insights.append(f"🌱 Excellent Redistribution: Low waste rate of {round(expired_percent, 1)}% across the board!")
-
-    if top_demanded_category_row:
-        insights.append(f"🔥 Highest NGO Demand: '{top_demanded_category_row['category']}' represents the most requested category. Direct surplus listings here first.")
-
-    if top_expired_category_row and top_expired_category_row['exp_count'] > 0:
-        insights.append(f"💡 Action Plan: '{top_expired_category_row['category']}' has the highest expiry frequency. Suggest donor kitchens portion these items into smaller packets for faster NGO pickups.")
-        
-    return insights
+    st.session_state.users = load_csv("users", u_seed)
+    st.session_state.ngos = load_csv("ngos", n_seed)
+    st.session_state.donations = load_csv("donations", d_seed)
+    st.session_state.requests = load_csv("requests", r_seed)
+    st.session_state.notifications = load_csv("notifications", nt_seed)
+    st.session_state.current_user = None
+    st.session_state.initialized = True

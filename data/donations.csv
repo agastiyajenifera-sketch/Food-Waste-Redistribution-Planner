@@ -1,0 +1,7 @@
+id,donor_id,food_name,category,quantity,unit,cooked_or_packaged,expiry_time,pickup_address,latitude,longitude,status,image,created_at
+1,2,Veg Rice & Curry,Cooked Food,15.0,servings,Cooked,2026-07-01 04:00:40,"123 Luxury Avenue, downtown (12.9715, 77.5946)",12.9715,77.5946,Collected,veg_rice_curry.jpg,2026-06-30 20:00:40
+2,3,Wheat Bread Loaves,Bakery Items,20.0,pieces,Packaged,2026-07-02 20:00:40,"456 Market Road, suburbs (12.9345, 77.6201)",12.9345,77.6201,Pending,wheat_bread.jpg,2026-06-30 20:00:40
+3,2,Fruit Salad Cups,Fresh Produce,10.0,pieces,Fresh,2026-06-30 16:00:40,"123 Luxury Avenue, downtown (12.9715, 77.5946)",12.9715,77.5946,Expired,fruit_salad.jpg,2026-06-30 20:00:40
+4,3,Fresh Apples,Fresh Produce,5.0,kg,Fresh,2026-07-04 20:00:40,"456 Market Road, suburbs (12.9345, 77.6201)",12.9345,77.6201,Requested,fresh_apples.jpg,2026-06-30 20:00:40
+5,2,Pasta Marinara,Cooked Food,25.0,servings,Cooked,2026-06-29 20:00:40,"123 Luxury Avenue, downtown (12.9715, 77.5946)",12.9715,77.5946,Collected,pasta_marinara.jpg,2026-06-30 20:00:40
+6,2,Hot Pasta Packages,Cooked Food,12.5,servings,Cooked,2026-07-01 12:00:00,"123 Luxury Avenue, downtown (12.9715, 77.5946)",12.9715,77.5946,Collected,pasta.jpg,2026-06-30 18:00:00
