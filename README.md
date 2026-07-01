@@ -1,5 +1,12 @@
 # 🥗 FoodShare: Food Waste Redistribution Planner
 
+## Problem Statement
+
+Every day, a large amount of good and edible food is wasted by restaurants, hotels, supermarkets, and households, while many people do not have enough food to eat. There is no simple and efficient system to connect food donors with NGOs in time. Because of delays and poor coordination, much of the donated food expires before it can reach people in need.
+
+Our **Food Waste Redistribution Planner** solves this problem by providing a platform where donors can donate surplus food, administrators can verify the donations, and NGOs can request and collect the food quickly. This helps reduce food waste and ensures that more food reaches needy people safely.
+
+## Project
 A neat, modern, and highly professional web application built using Python and **Streamlit** to coordinate food surplus rescue. The platform connects verified food donors (hotels, restaurants, supermarkets) with local non-governmental organizations (NGOs) to minimize food waste and support communities in need.
 
 ![Indian Food Background](assets/images/indian_food_bg.jpg)
